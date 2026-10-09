@@ -8,31 +8,17 @@ use tokio::sync::Mutex;
 
 use crate::utils;
 
-const BACKUP_EXTENSIONS: &[&str] = &[
-    ".bak", ".old", ".backup", ".orig", ".copy", ".tmp",
-    ".swp", ".swo", "~", ".save", ".saved",
-    ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz", ".zip", ".rar", ".7z",
-    ".sql", ".sqlite", ".db", ".mdb",
-    ".env", ".env.local", ".env.production", ".env.development", ".env.staging",
-    ".config", ".conf", ".cfg", ".ini", ".properties",
-    ".yml", ".yaml", ".json", ".xml", ".toml",
-    ".log", ".dump", ".export",
-    ".pem", ".key", ".crt", ".cer", ".p12", ".pfx",
-    ".htpasswd", ".htaccess",
-    ".DS_Store", ".gitignore", ".svn",
-];
-
 const CONFIG_PATHS: &[&str] = &[
-    "/config", "/conf", "/cfg", "/settings", "/admin",
-    "/backup", "/backups", "/bak", "/old", "/temp", "/tmp",
+    "/config", "/conf", "/cfg", "/settings",
+    "/backup", "/backups", "/bak", "/old",
     "/db", "/database", "/sql", "/data",
     "/logs", "/log", "/debug",
-    "/test", "/testing", "/dev", "/development", "/staging",
+    "/test", "/dev", "/staging",
     "/.env", "/wp-config.php", "/config.php", "/configuration.php",
     "/web.config", "/appsettings.json", "/config.json", "/config.yml",
     "/settings.json", "/application.yml", "/application.properties",
     "/robots.txt", "/sitemap.xml", "/crossdomain.xml",
-    "/.git/config", "/.svn/entries", "/.hg/dirstate",
+    "/.git/config", "/.svn/entries",
     "/phpinfo.php", "/info.php", "/test.php",
     "/server-status", "/server-info",
     "/elmah.axd", "/trace.axd",
@@ -55,32 +41,26 @@ pub async fn fuzz(subdomains: &[String], wordlist_path: Option<&Path>) -> Result
         .build()?;
     
     let mut paths: Vec<String> = Vec::new();
-    
+
     // Add config paths
     for path in CONFIG_PATHS {
         paths.push(path.to_string());
     }
-    
-    // Add backup extensions for common files
-    let base_files = &["index", "backup", "database", "db", "dump", "export", "www", "public", "html", "site"];
-    for base in base_files {
-        for ext in BACKUP_EXTENSIONS {
-            paths.push(format!("/{}{}", base, ext));
-        }
-    }
-    
-    // Add custom wordlist if provided
-    if let Some(wordlist) = wordlist_path {
-        let custom = std::fs::read_to_string(wordlist)?;
-        for line in custom.lines() {
-            let line = line.trim();
-            if !line.is_empty() && !line.starts_with('#') {
-                paths.push(if line.starts_with('/') {
-                    line.to_string()
-                } else {
-                    format!("/{}", line)
-                });
-            }
+
+    // Add custom wordlist if provided, else use built-in
+    let wordlist_content = if let Some(wordlist) = wordlist_path {
+        std::fs::read_to_string(wordlist)?
+    } else {
+        include_str!("../wordlists/backups.txt").to_string()
+    };
+    for line in wordlist_content.lines() {
+        let line = line.trim();
+        if !line.is_empty() && !line.starts_with('#') {
+            paths.push(if line.starts_with('/') {
+                line.to_string()
+            } else {
+                format!("/{}", line)
+            });
         }
     }
     
