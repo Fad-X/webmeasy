@@ -1,0 +1,11 @@
+Package: webmeasy
+Version: 0.2.0
+Section: web
+Priority: optional
+Architecture: amd64
+Depends: libc6 (>= 2.31), libssl3
+Maintainer: Fad-X <Fad-X@users.noreply.github.com>
+Description: Web application enumeration tool for external attack surface mapping
+ Maps external attack surface via subfinder subdomain enumeration,
+ httpx host probing, Nuclei vulnerability scanning, backup/config
+ fuzzing, and exposed .git detection. Outputs professional PDF reports.
