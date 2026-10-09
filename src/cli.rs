@@ -10,9 +10,13 @@ pub struct Args {
     #[arg(short, long)]
     pub domain: String,
 
-    /// Enable subdomain enumeration
+    /// Enable subdomain enumeration (via subfinder)
     #[arg(short, long)]
     pub subdomains: bool,
+
+    /// Probe live hosts with httpx (protocol, status, technologies)
+    #[arg(short, long)]
+    pub probe: bool,
 
     /// Run Nuclei vulnerability scan
     #[arg(short, long)]
@@ -38,7 +42,15 @@ pub struct Args {
     #[arg(long)]
     pub nuclei_templates: Option<PathBuf>,
 
-    /// Output file path (JSON format)
+    /// JSON output file path
     #[arg(short, long)]
     pub output: Option<PathBuf>,
+
+    /// PDF output file path
+    #[arg(long)]
+    pub pdf: Option<PathBuf>,
+
+    /// Install missing dependencies (subfinder, httpx, nuclei) via go install
+    #[arg(long)]
+    pub install_deps: bool,
 }

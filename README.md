@@ -4,162 +4,165 @@ A fast web application enumeration tool written in Rust for mapping external att
 
 ## Features
 
-- **Subdomain Enumeration**: Uses subfinder for passive subdomain discovery with active DNS brute-force fallback
-- **Nuclei Integration**: Template-based vulnerability scanning across discovered assets
-- **Backup & Config Fuzzing**: Discovers exposed backup files, configuration artifacts, and sensitive data
-- **Git Exposure Detection**: Identifies exposed `.git` directories and source code leaks
-- **Beautiful Output**: Color-coded terminal output with progress bars
-- **JSON Reports**: Export detailed findings in JSON format
+- **Subdomain Enumeration** — Powered by `subfinder` (passive: CT logs, search engines, DNS datasets, APIs)
+- **HTTP Probing** — `httpx` integration for protocol detection, status codes, titles, and web technologies
+- **Nuclei Integration** — Template-based vulnerability scanning across discovered assets
+- **Backup & Config Fuzzing** — Discovers exposed backup files, configuration artifacts, and sensitive data
+- **Git Exposure Detection** — Identifies exposed `.git` / `.svn` directories and source code leaks
+- **Professional PDF Reports** — Clean, sorted A4 PDF output for reporting
+- **Dependency Auto-Install** — Automatically installs `subfinder`, `httpx`, and `nuclei` if missing
+- **JSON Export** — Structured JSON output for further processing
 
-## Installation
+## Prerequisites
 
-### Prerequisites
+| Tool | Purpose | Install |
+|------|---------|---------|
+| [subfinder](https://github.com/projectdiscovery/subfinder) | Passive subdomain enumeration | `go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest` |
+| [httpx](https://github.com/projectdiscovery/httpx) | HTTP probing & tech detection | `go install github.com/projectdiscovery/httpx/cmd/httpx@latest` |
+| [nuclei](https://github.com/projectdiscovery/nuclei) | Vulnerability scanning | `go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest` |
+| [Go](https://go.dev/dl/) | For installing the above | — |
 
-- Rust 1.70+
-- [subfinder](https://github.com/projectdiscovery/subfinder) - For subdomain enumeration
-- [nuclei](https://github.com/projectdiscovery/nuclei) - For vulnerability scanning (optional)
+> **Tip:** Run `webmeasy --install-deps` to install all missing tools automatically.
 
-### Build from source
+## Build from source
 
 ```bash
 cargo build --release
 ```
 
-The binary will be at `target/release/webmeasy`
+Binary at `target/release/webmeasy`
 
 ## Usage
 
-### Run all scans
+### Full scan with PDF report
+
 ```bash
-webmeasy -d example.com --all
+webmeasy -d example.com --all --pdf report.pdf -o report.json
 ```
 
-### Subdomain enumeration only
+### Subdomains + live host probing
+
 ```bash
-webmeasy -d example.com -s
+webmeasy -d example.com -s -p
 ```
 
-### Run with Nuclei vulnerability scan
+### Subdomains + Nuclei scan + PDF output
+
 ```bash
-webmeasy -d example.com -s -n
+webmeasy -d example.com -s -n --pdf findings.pdf
 ```
 
-### Fuzz for backup files
+### Backup file fuzzing + .git check
+
 ```bash
-webmeasy -d example.com -f
+webmeasy -d example.com -f -g --pdf report.pdf
 ```
 
-### Check for exposed .git
-```bash
-webmeasy -d example.com -g
-```
+### Install dependencies
 
-### Full scan with custom wordlist and output
 ```bash
-webmeasy -d example.com --all -w /path/to/wordlist.txt -o report.json
+webmeasy --install-deps
 ```
 
 ## Command Line Options
 
-| Option | Long | Description |
-|--------|------|-------------|
+| Flag | Long | Description |
+|------|------|-------------|
 | `-d` | `--domain` | Target domain to enumerate |
-| `-s` | `--subdomains` | Enable subdomain enumeration |
+| `-s` | `--subdomains` | Subdomain enumeration via subfinder |
+| `-p` | `--probe` | Probe live hosts with httpx (protocol, status, tech) |
 | `-n` | `--nuclei` | Run Nuclei vulnerability scan |
 | `-f` | `--fuzz` | Fuzz for backup files and configurations |
-| `-g` | `--git` | Check for exposed .git directories |
-| `-a` | `--all` | Run all enumeration modules |
-| `-w` | `--wordlist` | Custom wordlist path |
-| `-o` | `--output` | Output file path (JSON format) |
+| `-g` | `--git` | Check for exposed .git / .svn directories |
+| `-a` | `--all` | Run all modules |
+| `-w` | `--wordlist` | Custom wordlist for subfinder / fuzzer |
+| `-o` | `--output` | JSON report output path |
+| | `--pdf` | PDF report output path |
 | | `--nuclei-templates` | Custom Nuclei templates directory |
+| | `--install-deps` | Install missing tools (subfinder, httpx, nuclei) |
 
 ## Modules
 
-### Subdomain Enumeration
+### Subdomain Enumeration (`subfinder`)
 
-Uses subfinder for passive enumeration from multiple sources:
+Uses subfinder for passive enumeration from:
 - Certificate Transparency logs
-- Search engines
-- DNS datasets
-- Various APIs
+- Search engines (Google, Bing, DuckDuckGo, etc.)
+- DNS datasets and threat intelligence feeds
+- 80+ sources with recursive discovery
 
-Falls back to active DNS brute-force with built-in wordlist.
+### HTTP Probing (`httpx`)
+
+Probes every discovered host to determine:
+- Protocol (HTTP/HTTPS)
+- Status code and redirect chain
+- Page title
+- Web server software
+- Web technology stack (CMS, frameworks, CDNs)
 
 ### Nuclei Vulnerability Scanning
 
-Integrates with Nuclei for template-based scanning:
-- CVE detection
-- Misconfiguration detection
-- Exposure detection
-- Technology fingerprinting
+Template-based scanning for:
+- CVEs and known vulnerabilities
+- Misconfigurations and security headers
+- Technology-specific exposures
 - Default credentials
 
 ### Backup & Config Fuzzing
 
-Checks for:
-- Environment files (.env, .env.local, etc.)
-- Database dumps (.sql, .sqlite, .db)
-- Archive files (.zip, .tar.gz, .rar)
-- Configuration files (wp-config.php, web.config, etc.)
-- Backup files (.bak, .old, .backup)
-- Certificate and key files (.pem, .key, .crt)
-- Log and debug files
-- Admin panels (phpMyAdmin, Adminer, etc.)
+Checks 400+ paths for:
+- Environment files (`.env`, `.env.local`, `.env.production`)
+- Database dumps (`.sql`, `.sqlite`, `.db`)
+- Archives (`.zip`, `.tar.gz`, `.rar`, `.7z`)
+- Config files (`wp-config.php`, `web.config`, `config.json`)
+- Backup extensions (`.bak`, `.old`, `.backup`, `~`)
+- Certificates/keys (`.pem`, `.key`, `.crt`)
+- Admin panels (phpMyAdmin, Adminer, server-status)
 
 ### Git Exposure Detection
 
-Checks for:
-- `.git/HEAD` - Git reference
-- `.git/config` - Git configuration (may contain credentials)
-- `.git/index` - Git index file
-- `.git/logs/` - Git logs
-- `.git/refs/` - Git references
-- `.git/objects/` - Git objects (source code)
-- `.git/hooks/` - Git hooks
-- `.svn/` - SVN exposure
-- `.gitignore`, `.gitmodules`
+Probes 21 paths over both HTTP/HTTPS:
+- `.git/HEAD`, `.git/config`, `.git/index`
+- `.git/logs/`, `.git/refs/`, `.git/objects/`, `.git/hooks/`
+- `.gitignore`, `.gitmodules`, `.svn/entries`
+- Content validation to avoid false positives
+- Severity classification (CRITICAL for config with remotes)
 
-## Output
+## Reports
 
-### Terminal Output
+### PDF Report (`--pdf report.pdf`)
 
-Colored, structured output showing:
-- Progress bars for each scan phase
-- Summary statistics
-- Detailed findings with severity levels
+Professional A4 PDF with:
+- Cover page with target and date
+- Executive summary with finding counts
+- Live hosts with technologies (sorted)
+- Full subdomain list (sorted)
+- Nuclei findings sorted by severity
+- Backup/config findings (sorted by URL)
+- Git exposures sorted by severity
 
-### JSON Report
+### JSON Report (`-o report.json`)
 
-When using `-o`, generates a JSON report with:
-- All discovered subdomains
-- Nuclei vulnerability findings
-- Fuzzing results
-- Git exposure findings
-- Summary statistics
+Machine-readable export with all findings and summary statistics.
 
-## Wordlists
+## Output Example
 
-Built-in wordlists included:
-- `wordlists/subdomains.txt` - Common subdomain names (500+ entries)
-- `wordlists/backups.txt` - Backup and configuration file paths (200+ entries)
-
-Custom wordlists can be specified with `-w` flag.
-
-## Examples
-
-### Quick subdomain scan
-```bash
-webmeasy -d example.com -s
 ```
+[*] Starting subdomain enumeration...
+    [~] Running subfinder (CT logs, search engines, DNS datasets, APIs)...
+    [+] subfinder returned 127 subdomains
 
-### Security assessment
-```bash
-webmeasy -d example.com --all -o assessment.json
-```
+[*] Probing live hosts with httpx...
+    [+] httpx found 43 live hosts
+    https://www.example.com [200] Example Domain | Cloudflare, HTTP/3
+    https://api.example.com [200] API Gateway | Nginx, Express.js
+    https://admin.example.com [403] Admin Panel | Apache
 
-### Scan with custom Nuclei templates
-```bash
-webmeasy -d example.com -n --nuclei-templates /path/to/templates
+[*] Running Nuclei vulnerability scan...
+    [+] 12 findings across 43 hosts
+
+[+] PDF report saved to: report.pdf
+[+] JSON report saved to: report.json
 ```
 
 ## License

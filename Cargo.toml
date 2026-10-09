@@ -17,3 +17,4 @@ colored = "2"
 futures = "0.3"
 anyhow = "1"
 indicatif = "0.17"
+time = { version = "0.3.55", features = ["formatting"] }
